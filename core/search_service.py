@@ -1,0 +1,101 @@
+from typing import Dict, List, Any
+from concurrent.futures import ThreadPoolExecutor
+from config.settings import MAX_WORKERS, SEARCH_FIELDS, CONTEXT_CHARS
+from core.es_client import ESClient
+from utils.logger import get_logger
+import re
+
+logger = get_logger(__name__)
+
+class SearchService:
+    def __init__(self):
+        self.es_client = ESClient()
+
+    def _clean_text(self, text: str) -> str:
+        """清理文本，移除无法编码的字符"""
+        # 移除 emoji 和其他特殊字符
+        text = re.sub(r'[\U00010000-\U0010ffff]', '', text)
+        # 移除代理对字符
+        text = re.sub(r'[\ud800-\udfff]', '', text)
+        return text
+
+    def _extract_context(self, text: str, keyword: str) -> str:
+        """提取关键词前后的指定字符数"""
+        try:
+            index = text.find(keyword)
+            if index == -1:
+                return ""
+            
+            start = max(0, index - CONTEXT_CHARS)
+            end = min(len(text), index + len(keyword) + CONTEXT_CHARS)
+            
+            return text[start:end]
+        except Exception as e:
+            logger.error(f"提取上下文失败: {str(e)}")
+            return ""
+
+    def _process_document(self, doc: Dict[str, Any], keyword: str) -> List[str]:
+        """处理单个文档，返回所有匹配的内容列表"""
+        try:
+            source = doc.get("_source", {})
+            matches = []
+
+            # 处理所有可能的字段
+            for field in SEARCH_FIELDS:
+                if field in source:
+                    text = source[field]
+                    if isinstance(text, str) and keyword in text:
+                        # 清理文本
+                        cleaned_text = self._clean_text(text)
+                        if cleaned_text:
+                            # 提取上下文
+                            context = self._extract_context(cleaned_text, keyword)
+                            if context:
+                                matches.append(context)
+
+            return matches
+        except Exception as e:
+            logger.error(f"处理文档失败: {str(e)}")
+            return []
+
+    def search(self, keyword: str, start_time: str, end_time: str) -> Dict[str, Any]:
+        """搜索并处理结果"""
+        try:
+            # 记录搜索参数
+            logger.info(f"开始搜索 - 关键词: {keyword}, 时间范围: {start_time} 至 {end_time}")
+            
+            # 获取原始搜索结果
+            results = self.es_client.search(keyword, start_time, end_time)
+            
+            # 记录搜索结果数量
+            logger.info(f"ES返回原始结果数量: {len(results)}")
+            
+            # 使用线程池处理结果
+            all_matches = []
+            with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+                futures = [
+                    executor.submit(self._process_document, doc, keyword)
+                    for doc in results
+                ]
+                for future in futures:
+                    try:
+                        matches = future.result()
+                        all_matches.extend(matches)
+                    except Exception as e:
+                        logger.error(f"处理结果失败: {str(e)}")
+
+            # 获取总数（从ES响应中获取）
+            total_hits = 0
+            if results and len(results) > 0:
+                total_hits = results[0].get("_source", {}).get("total_hits", 0)
+
+            # 构建返回结果
+            return {
+                "total": total_hits,
+                "parsed": len(all_matches),
+                "words": all_matches
+            }
+
+        except Exception as e:
+            logger.error(f"搜索服务失败: {str(e)}")
+            raise 
