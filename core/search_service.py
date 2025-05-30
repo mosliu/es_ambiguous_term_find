@@ -93,7 +93,13 @@ class SearchService:
             return {
                 "total": total_hits,
                 "parsed": len(all_matches),
-                "words": all_matches
+                "max_results": len(results),
+                "words": sorted(
+                    [{"word": word, "count": count} for word, count in 
+                     {word: all_matches.count(word) for word in all_matches}.items()],
+                    key=lambda x: x["count"],
+                    reverse=True
+                )
             }
 
         except Exception as e:

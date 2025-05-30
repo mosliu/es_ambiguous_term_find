@@ -1,62 +1,99 @@
-# ES 模糊词查询服务
+# ES 歧义词查询服务
 
 这是一个用于从 Elasticsearch 中查询特定词语并分析其上下文的服务。
 
 ## 功能特点
 
-- 支持多字段查询（title, content, retweet_title, retweet_content等）
-- 支持时间范围查询（精确到秒）
-- 支持按月索引自动切换
-- 支持上下文分析（前后4个字符）
-- 支持多线程处理
-- 完整的日志记录
-- RESTful API接口
-- 错误处理和异常恢复
+- 支持多字段搜索
+- 支持时间范围过滤
+- 自动提取关键词上下文
+- 结果去重和统计
+- 支持大量数据的分页查询
 
-## 环境要求
+## API 接口
 
-- Python 3.8+
-- Elasticsearch 7.x+
+### 搜索接口
 
-## 安装
-
-1. 克隆项目
-```bash
-git clone [项目地址]
-cd es_ambiguous_term_find
+```
+POST /api/search
 ```
 
-2. 创建虚拟环境并安装依赖
+请求参数：
+```json
+{
+    "keyword": "搜索关键词",
+    "start_time": "2024-01-01 00:00:00",
+    "end_time": "2024-01-02 00:00:00"
+}
+```
+
+响应格式：
+```json
+{
+    "code": 200,
+    "message": "success",
+    "data": {
+        "total": 13771,        // 总匹配数
+        "parsed": 12756,       // 已解析数
+        "max_results": 10000,  // 最大结果数
+        "words": [             // 去重后的词条列表
+            {
+                "word": "匹配内容",
+                "count": 出现次数
+            }
+        ]
+    }
+}
+```
+
+## 配置说明
+
+在 `.env` 文件中配置以下参数：
+
+```env
+# API 配置
+API_HOST=0.0.0.0
+API_PORT=8000
+
+# Elasticsearch 配置
+ES_HOST=localhost
+ES_PORT=9200
+ES_USERNAME=elastic
+ES_PASSWORD=your_password
+
+# 搜索配置
+MAX_RESULTS=10000        // 最大返回结果数
+CONTEXT_CHARS=50        // 关键词前后提取的字符数
+```
+
+## 安装和运行
+
+1. 安装依赖：
 ```bash
-uv venv
-.venv/Scripts/activate  # Windows
 pip install -r requirements.txt
 ```
 
-3. 配置环境变量
+2. 配置环境变量：
 ```bash
-cp .env.example .env
-# 编辑 .env 文件，填入必要的配置信息
+cp .env_example .env
+# 编辑 .env 文件，填入实际配置
 ```
 
-## 使用方法
-
-1. 启动服务
+3. 运行服务：
 ```bash
 python main.py
 ```
 
-2. API 调用示例
-```bash
-curl -X POST http://localhost:8000/api/search \
--H "Content-Type: application/json" \
--d '{
-    "keyword": "搜索词",
-    "start_time": "2024-01-01 00:00:00",
-    "end_time": "2024-03-01 23:59:59"
-}'
-```
+## 使用说明
 
-## 项目结构
+1. 访问 http://localhost:8000 打开查询界面
+2. 输入搜索关键词
+3. 选择时间范围
+4. 点击搜索按钮
+5. 查看结果统计和匹配内容
 
-```
+## 注意事项
+
+- 时间格式必须是 `YYYY-MM-DD HH:MM:SS`
+- 最大返回结果数受 `MAX_RESULTS` 配置限制
+- 关键词上下文长度受 `CONTEXT_CHARS` 配置限制

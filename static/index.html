@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ES 模糊词查询</title>
+    <title>ES 歧义词查询</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
@@ -88,10 +88,17 @@
         }
         .stats p {
             margin: 0;
-            padding: 5px 15px;
+            padding: 8px 15px;
             background-color: white;
             border-radius: 4px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stats p span {
+            color: #666;
+            font-size: 14px;
         }
         .word-list {
             max-height: 600px;
@@ -105,6 +112,9 @@
             padding: 12px;
             border-bottom: 1px solid #eee;
             line-height: 1.5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .word-item:last-child {
             border-bottom: none;
@@ -152,11 +162,20 @@
         .flatpickr-time .flatpickr-am-pm {
             margin-left: 5px;
         }
+        .word-count {
+            background-color: #4CAF50;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 14px;
+            min-width: 40px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div id="app" class="container">
-        <h1>ES 模糊词查询</h1>
+        <h1>ES 歧义词查询</h1>
         
         <div class="search-form">
             <div class="form-group">
@@ -187,13 +206,15 @@
 
         <div v-if="results" class="results">
             <div class="stats">
-                <p>总匹配数：{{ results.total }}</p>
-                <p>已解析数：{{ results.parsed }}</p>
+                <p>总匹配数：{{ results.total }} <span>条</span></p>
+                <p>已解析数：{{ results.parsed }} <span>条</span></p>
+                <p>最大结果：{{ results.max_results }} <span>条</span></p>
             </div>
 
             <div class="word-list">
-                <div v-for="(word, index) in results.words" :key="index" class="word-item">
-                    {{ word }}
+                <div v-for="(item, index) in results.words" :key="index" class="word-item">
+                    <span class="word-text">{{ item.word }}</span>
+                    <span class="word-count">{{ item.count }}</span>
                 </div>
             </div>
         </div>
