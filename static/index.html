@@ -25,12 +25,22 @@
         }
         .search-form {
             margin-bottom: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            display: flex;
             gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto 20px;
+            align-items: flex-end;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 0;
+            flex: 1;
+        }
+        .form-group.small {
+            flex: 0.5;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
         }
         label {
             display: block;
@@ -192,8 +202,16 @@
                 <label for="endTime">结束时间：</label>
                 <input type="text" id="endTime" ref="endTimePicker" placeholder="选择结束时间">
             </div>
+
+            <div class="form-group small">
+                <label for="contextLength">上下文长度：</label>
+                <input type="number" id="contextLength" v-model="contextLength" placeholder="请输入上下文长度" min="1" value="1">
+            </div>
             
-            <button @click="search" :disabled="loading">搜索</button>
+            <div class="button-group">
+                <button @click="search" :disabled="loading">搜索</button>
+                <button @click="clearForm" :disabled="loading">清空</button>
+            </div>
         </div>
 
         <div v-if="error" class="error">
@@ -229,6 +247,7 @@
                     keyword: '',
                     startTime: '',
                     endTime: '',
+                    contextLength: '1',
                     results: null,
                     loading: false,
                     error: null,
@@ -247,7 +266,7 @@
                     allowInput: true,
                     position: "auto center",
                     static: true,
-                    onChange: (selectedDates, dateStr) => {
+                    onClose: (selectedDates, dateStr) => {
                         if (selectedDates[0]) {
                             const date = selectedDates[0];
                             const hours = String(date.getHours()).padStart(2, '0');
@@ -264,10 +283,20 @@
                     defaultHour: 0,
                     defaultMinute: 0,
                     defaultSeconds: 0,
-                    onChange: (selectedDates) => {
+                    onChange: (selectedDates, dateStr) => {
                         if (selectedDates[0]) {
                             const date = selectedDates[0];
                             this.startTime = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                        } else {
+                            this.startTime = '';
+                        }
+                    },
+                    onClose: (selectedDates, dateStr) => {
+                        if (selectedDates[0]) {
+                            const date = selectedDates[0];
+                            this.startTime = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                        } else if (dateStr && this.validateTimeFormat(dateStr)) {
+                            this.startTime = dateStr;
                         } else {
                             this.startTime = '';
                         }
@@ -279,10 +308,20 @@
                     defaultHour: 23,
                     defaultMinute: 59,
                     defaultSeconds: 59,
-                    onChange: (selectedDates) => {
+                    onChange: (selectedDates, dateStr) => {
                         if (selectedDates[0]) {
                             const date = selectedDates[0];
                             this.endTime = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                        } else {
+                            this.endTime = '';
+                        }
+                    },
+                    onClose: (selectedDates, dateStr) => {
+                        if (selectedDates[0]) {
+                            const date = selectedDates[0];
+                            this.endTime = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+                        } else if (dateStr && this.validateTimeFormat(dateStr)) {
+                            this.endTime = dateStr;
                         } else {
                             this.endTime = '';
                         }
@@ -290,6 +329,33 @@
                 });
             },
             methods: {
+                validateTimeFormat(timeStr) {
+                    const regex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+                    if (!regex.test(timeStr)) {
+                        return false;
+                    }
+                    const [datePart, timePart] = timeStr.split(' ');
+                    const [year, month, day] = datePart.split('-').map(Number);
+                    const [hours, minutes, seconds] = timePart.split(':').map(Number);
+                    
+                    const date = new Date(year, month - 1, day, hours, minutes, seconds);
+                    return date.getFullYear() === year &&
+                           date.getMonth() === month - 1 &&
+                           date.getDate() === day &&
+                           date.getHours() === hours &&
+                           date.getMinutes() === minutes &&
+                           date.getSeconds() === seconds;
+                },
+                clearForm() {
+                    this.keyword = '';
+                    this.startTime = '';
+                    this.endTime = '';
+                    this.contextLength = '1';
+                    this.results = null;
+                    this.error = null;
+                    this.startTimePicker.clear();
+                    this.endTimePicker.clear();
+                },
                 async search() {
                     if (!this.keyword) {
                         this.error = '请输入关键词';
@@ -309,7 +375,8 @@
                         const response = await axios.post('/api/search', {
                             keyword: this.keyword,
                             start_time: this.startTime,
-                            end_time: this.endTime
+                            end_time: this.endTime,
+                            context_chars: this.contextLength ? parseInt(this.contextLength) : undefined
                         });
                         
                         if (response.data.code === 200) {

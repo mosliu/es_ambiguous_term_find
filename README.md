@@ -23,7 +23,8 @@ POST /api/search
 {
     "keyword": "搜索关键词",
     "start_time": "2024-01-01 00:00:00",
-    "end_time": "2024-01-02 00:00:00"
+    "end_time": "2024-01-02 00:00:00",
+    "context_chars": 50  // 可选参数，指定关键词前后提取的字符数
 }
 ```
 
@@ -35,8 +36,8 @@ POST /api/search
     "data": {
         "total": 13771,        // 总匹配数
         "parsed": 12756,       // 已解析数
-        "max_results": 10000,  // 最大结果数
-        "words": [             // 去重后的词条列表
+        "max_results": 10000,  // ES返回的实际结果数
+        "words": [             // 去重后的词条列表，按出现次数降序排序
             {
                 "word": "匹配内容",
                 "count": 出现次数
@@ -63,7 +64,7 @@ ES_PASSWORD=your_password
 
 # 搜索配置
 MAX_RESULTS=10000        // 最大返回结果数
-CONTEXT_CHARS=50        // 关键词前后提取的字符数
+CONTEXT_CHARS=50        // 默认关键词前后提取的字符数
 ```
 
 ## 安装和运行
@@ -96,4 +97,5 @@ python main.py
 
 - 时间格式必须是 `YYYY-MM-DD HH:MM:SS`
 - 最大返回结果数受 `MAX_RESULTS` 配置限制
-- 关键词上下文长度受 `CONTEXT_CHARS` 配置限制
+- 关键词上下文长度可以通过请求参数 `context_chars` 自定义，默认使用 `CONTEXT_CHARS` 配置值
+- 上下文长度最小值为1

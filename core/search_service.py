@@ -19,22 +19,22 @@ class SearchService:
         text = re.sub(r'[\ud800-\udfff]', '', text)
         return text
 
-    def _extract_context(self, text: str, keyword: str) -> str:
+    def _extract_context(self, text: str, keyword: str, context_chars: int = CONTEXT_CHARS) -> str:
         """提取关键词前后的指定字符数"""
         try:
             index = text.find(keyword)
             if index == -1:
                 return ""
             
-            start = max(0, index - CONTEXT_CHARS)
-            end = min(len(text), index + len(keyword) + CONTEXT_CHARS)
+            start = max(0, index - context_chars)
+            end = min(len(text), index + len(keyword) + context_chars)
             
             return text[start:end]
         except Exception as e:
             logger.error(f"提取上下文失败: {str(e)}")
             return ""
 
-    def _process_document(self, doc: Dict[str, Any], keyword: str) -> List[str]:
+    def _process_document(self, doc: Dict[str, Any], keyword: str, context_chars: int = CONTEXT_CHARS) -> List[str]:
         """处理单个文档，返回所有匹配的内容列表"""
         try:
             source = doc.get("_source", {})
@@ -49,7 +49,7 @@ class SearchService:
                         cleaned_text = self._clean_text(text)
                         if cleaned_text:
                             # 提取上下文
-                            context = self._extract_context(cleaned_text, keyword)
+                            context = self._extract_context(cleaned_text, keyword, context_chars)
                             if context:
                                 matches.append(context)
 
@@ -58,11 +58,11 @@ class SearchService:
             logger.error(f"处理文档失败: {str(e)}")
             return []
 
-    def search(self, keyword: str, start_time: str, end_time: str) -> Dict[str, Any]:
+    def search(self, keyword: str, start_time: str, end_time: str, context_chars: int = CONTEXT_CHARS) -> Dict[str, Any]:
         """搜索并处理结果"""
         try:
             # 记录搜索参数
-            logger.info(f"开始搜索 - 关键词: {keyword}, 时间范围: {start_time} 至 {end_time}")
+            logger.info(f"开始搜索 - 关键词: {keyword}, 时间范围: {start_time} 至 {end_time}, 上下文长度: {context_chars}")
             
             # 获取原始搜索结果
             results = self.es_client.search(keyword, start_time, end_time)
@@ -74,7 +74,7 @@ class SearchService:
             all_matches = []
             with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
                 futures = [
-                    executor.submit(self._process_document, doc, keyword)
+                    executor.submit(self._process_document, doc, keyword, context_chars)
                     for doc in results
                 ]
                 for future in futures:
