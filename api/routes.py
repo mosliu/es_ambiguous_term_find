@@ -14,6 +14,7 @@ class SearchRequest(BaseModel):
     start_time: str
     end_time: str
     context_chars: Optional[int] = None
+    max_results: Optional[int] = None
 
     @field_validator('start_time', 'end_time')
     @classmethod
@@ -41,6 +42,13 @@ class SearchRequest(BaseModel):
             raise ValueError("上下文长度必须大于等于1")
         return v
 
+    @field_validator('max_results')
+    @classmethod
+    def validate_max_results(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v < 1:
+            raise ValueError("最大结果数必须大于等于1")
+        return v
+
 @router.post("/search")
 async def search(request: SearchRequest):
     """搜索接口"""
@@ -50,7 +58,8 @@ async def search(request: SearchRequest):
             keyword=request.keyword,
             start_time=request.start_time,
             end_time=request.end_time,
-            context_chars=request.context_chars
+            context_chars=request.context_chars,
+            max_results=request.max_results
         )
         
         return {

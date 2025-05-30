@@ -24,7 +24,8 @@ POST /api/search
     "keyword": "搜索关键词",
     "start_time": "2024-01-01 00:00:00",
     "end_time": "2024-01-02 00:00:00",
-    "context_chars": 50  // 可选参数，指定关键词前后提取的字符数
+    "context_chars": 50,  // 可选参数，指定关键词前后提取的字符数
+    "max_results": 10000  // 可选参数，指定最大返回结果数
 }
 ```
 
@@ -63,7 +64,7 @@ ES_USERNAME=elastic
 ES_PASSWORD=your_password
 
 # 搜索配置
-MAX_RESULTS=10000        // 最大返回结果数
+MAX_RESULTS=10000        // 默认最大返回结果数
 CONTEXT_CHARS=50        // 默认关键词前后提取的字符数
 ```
 
@@ -96,6 +97,6 @@ python main.py
 ## 注意事项
 
 - 时间格式必须是 `YYYY-MM-DD HH:MM:SS`
-- 最大返回结果数受 `MAX_RESULTS` 配置限制
+- 最大返回结果数可以通过请求参数 `max_results` 自定义，默认使用 `MAX_RESULTS` 配置值
 - 关键词上下文长度可以通过请求参数 `context_chars` 自定义，默认使用 `CONTEXT_CHARS` 配置值
-- 上下文长度最小值为1
+- 上下文长度和最大结果数的最小值均为1

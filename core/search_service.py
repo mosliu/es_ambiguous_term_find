@@ -1,6 +1,6 @@
 from typing import Dict, List, Any
 from concurrent.futures import ThreadPoolExecutor
-from config.settings import MAX_WORKERS, SEARCH_FIELDS, CONTEXT_CHARS
+from config.settings import MAX_WORKERS, SEARCH_FIELDS, CONTEXT_CHARS, MAX_RESULTS
 from core.es_client import ESClient
 from utils.logger import get_logger
 import re
@@ -58,14 +58,14 @@ class SearchService:
             logger.error(f"处理文档失败: {str(e)}")
             return []
 
-    def search(self, keyword: str, start_time: str, end_time: str, context_chars: int = CONTEXT_CHARS) -> Dict[str, Any]:
+    def search(self, keyword: str, start_time: str, end_time: str, context_chars: int = CONTEXT_CHARS, max_results: int = MAX_RESULTS) -> Dict[str, Any]:
         """搜索并处理结果"""
         try:
             # 记录搜索参数
-            logger.info(f"开始搜索 - 关键词: {keyword}, 时间范围: {start_time} 至 {end_time}, 上下文长度: {context_chars}")
+            logger.info(f"开始搜索 - 关键词: {keyword}, 时间范围: {start_time} 至 {end_time}, 上下文长度: {context_chars}, 最大结果数: {max_results}")
             
             # 获取原始搜索结果
-            results = self.es_client.search(keyword, start_time, end_time)
+            results = self.es_client.search(keyword, start_time, end_time, max_results)
             
             # 记录搜索结果数量
             logger.info(f"ES返回原始结果数量: {len(results)}")

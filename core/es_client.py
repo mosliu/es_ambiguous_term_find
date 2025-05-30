@@ -6,7 +6,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from datetime import datetime
 from config.settings import (
     ES_HOST, ES_PORT, ES_USERNAME, ES_PASSWORD,
-    SCROLL_TIMEOUT, MAX_RETRIES, RETRY_DELAY
+    SCROLL_TIMEOUT, MAX_RETRIES, RETRY_DELAY, MAX_RESULTS
 )
 from utils.logger import get_logger
 
@@ -52,7 +52,7 @@ class ESClient:
             logger.error(f"时间格式错误: {time_str}, 错误信息: {str(e)}")
             raise ValueError(f"时间格式必须为 'YYYY-MM-DD HH:MM:SS', 当前格式: {time_str}")
 
-    def search_with_scroll(self, index: str, query: Dict, size: int = 1000) -> List[Dict]:
+    def search_with_scroll(self, index: str, query: Dict, size: int = 1000, max_results: int = MAX_RESULTS) -> List[Dict]:
         """使用scroll API进行分页查询"""
         try:
             # 初始化scroll
@@ -70,7 +70,7 @@ class ESClient:
             results = hits
 
             # 继续获取数据直到没有更多结果
-            while hits and len(results) < 10000:  # 限制最大结果数
+            while hits and len(results) < max_results:  # 使用传入的max_results
                 scroll_data = {
                     "scroll": SCROLL_TIMEOUT,
                     "scroll_id": scroll_id
@@ -87,7 +87,7 @@ class ESClient:
                 result["_source"] = result.get("_source", {})
                 result["_source"]["total_hits"] = total_hits
             
-            return results[:10000]  # 确保不超过最大限制
+            return results[:max_results]  # 确保不超过最大限制
 
         except Exception as e:
             logger.error(f"Scroll查询失败: {str(e)}")
@@ -100,7 +100,7 @@ class ESClient:
         month = date_str[5:7]
         return f"qb{year}{month}1"
 
-    def search(self, keyword: str, start_time: str, end_time: str) -> List[Dict]:
+    def search(self, keyword: str, start_time: str, end_time: str, max_results: int = MAX_RESULTS) -> List[Dict]:
         """搜索关键词"""
         try:
             # 验证并格式化时间
@@ -169,18 +169,17 @@ class ESClient:
             
             # 如果开始和结束索引相同，直接查询
             if start_index == end_index:
-                results = self.search_with_scroll(start_index, query)
+                results = self.search_with_scroll(start_index, query, max_results=max_results)
                 logger.info(f"单索引查询完成 - 索引: {start_index}, 结果数量: {len(results)}")
                 return results
             
             # 否则需要查询多个索引
             all_results = []
             current_index = start_index
-            while current_index <= end_index:
+            while current_index <= end_index and len(all_results) < max_results:
                 try:
-                    results = self.search_with_scroll(current_index, query)
+                    results = self.search_with_scroll(current_index, query, max_results=max_results - len(all_results))
                     logger.info(f"多索引查询 - 当前索引: {current_index}, 结果数量: {len(results)}")
-                    logger.info(f"返回的result为：{results}")
                     all_results.extend(results)
                 except Exception as e:
                     logger.warning(f"查询索引 {current_index} 失败: {str(e)}")
@@ -188,7 +187,7 @@ class ESClient:
                 current_index = self._get_next_index(current_index)
             
             logger.info(f"多索引查询完成 - 总结果数量: {len(all_results)}")
-            return all_results[:10000]  # 确保不超过最大限制
+            return all_results[:max_results]  # 确保不超过最大限制
 
         except Exception as e:
             logger.error(f"搜索失败: {str(e)}")

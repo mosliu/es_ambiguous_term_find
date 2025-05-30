@@ -207,6 +207,11 @@
                 <label for="contextLength">上下文长度：</label>
                 <input type="number" id="contextLength" v-model="contextLength" placeholder="请输入上下文长度" min="1" value="1">
             </div>
+
+            <div class="form-group small">
+                <label for="maxResults">最大结果数：</label>
+                <input type="number" id="maxResults" v-model="maxResults" placeholder="请输入最大结果数" min="1" value="10000">
+            </div>
             
             <div class="button-group">
                 <button @click="search" :disabled="loading">搜索</button>
@@ -248,6 +253,7 @@
                     startTime: '',
                     endTime: '',
                     contextLength: '1',
+                    maxResults: '10000',
                     results: null,
                     loading: false,
                     error: null,
@@ -351,6 +357,7 @@
                     this.startTime = '';
                     this.endTime = '';
                     this.contextLength = '1';
+                    this.maxResults = '10000';
                     this.results = null;
                     this.error = null;
                     this.startTimePicker.clear();
@@ -376,7 +383,8 @@
                             keyword: this.keyword,
                             start_time: this.startTime,
                             end_time: this.endTime,
-                            context_chars: this.contextLength ? parseInt(this.contextLength) : undefined
+                            context_chars: this.contextLength ? parseInt(this.contextLength) : undefined,
+                            max_results: this.maxResults ? parseInt(this.maxResults) : undefined
                         });
                         
                         if (response.data.code === 200) {
