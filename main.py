@@ -2,16 +2,27 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from api.routes import router
 from config.settings import API_HOST, API_PORT
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """服务生命周期管理"""
+    # 启动时的操作
+    logger.info("服务启动中...")
+    yield
+    # 关闭时的操作
+    logger.info("服务关闭中...")
+
 app = FastAPI(
     title="ES 模糊词查询服务",
     description="用于从 Elasticsearch 中查询特定词语并分析其上下文的服务",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # 配置 CORS
@@ -35,15 +46,11 @@ async def root():
     from fastapi.responses import FileResponse
     return FileResponse("static/index.html")
 
-@app.on_event("startup")
-async def startup_event():
-    """服务启动时的初始化操作"""
-    logger.info("服务启动中...")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """服务关闭时的清理操作"""
-    logger.info("服务关闭中...")
+@app.get("/author_stats.html")
+async def author_stats():
+    """作者统计页面"""
+    from fastapi.responses import FileResponse
+    return FileResponse("static/author_stats.html")
 
 if __name__ == "__main__":
     logger.info(f"服务启动在 http://{API_HOST}:{API_PORT}")

@@ -105,3 +105,26 @@ class SearchService:
         except Exception as e:
             logger.error(f"搜索服务失败: {str(e)}")
             raise 
+
+    def get_author_stats(self, start_time: str, end_time: str, top_n: int = 10) -> Dict[str, Any]:
+        """获取指定时间范围内的作者统计信息"""
+        try:
+            # 记录统计参数
+            logger.info(f"开始统计作者 - 时间范围: {start_time} 至 {end_time}, 显示数量: {top_n}")
+            
+            # 获取作者聚合结果
+            results = self.es_client.get_author_aggregation(start_time, end_time, top_n)
+            
+            # 构建返回结果
+            return {
+                "total_authors": results.get("total_authors", 0),
+                "time_range": {
+                    "start": start_time,
+                    "end": end_time
+                },
+                "top_authors": results.get("top_authors", [])
+            }
+
+        except Exception as e:
+            logger.error(f"作者统计服务失败: {str(e)}")
+            raise 
