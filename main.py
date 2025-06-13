@@ -52,6 +52,12 @@ async def author_stats():
     from fastapi.responses import FileResponse
     return FileResponse("static/author_stats.html")
 
+@app.get("/media_stats.html")
+async def media_stats():
+    """媒体统计页面"""
+    from fastapi.responses import FileResponse
+    return FileResponse("static/media_stats.html")
+
 if __name__ == "__main__":
     logger.info(f"服务启动在 http://{API_HOST}:{API_PORT}")
     uvicorn.run(

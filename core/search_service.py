@@ -128,3 +128,16 @@ class SearchService:
         except Exception as e:
             logger.error(f"作者统计服务失败: {str(e)}")
             raise 
+
+    def get_media_stats(self, start_time: str, end_time: str, top_n: int) -> Dict[str, Any]:
+        """获取媒体统计信息"""
+        try:
+            result = self.es_client.get_media_aggregation(
+                start_time=start_time,
+                end_time=end_time,
+                top_n=top_n
+            )
+            return result
+        except Exception as e:
+            logger.error(f"媒体统计服务失败: {str(e)}")
+            raise 

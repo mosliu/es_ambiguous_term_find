@@ -3,403 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ES 歧义词查询</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/zh.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .search-form {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto 20px;
-            align-items: flex-end;
-        }
-        .form-group {
-            margin-bottom: 0;
-            flex: 1;
-        }
-        .form-group.small {
-            flex: 0.5;
-        }
-        .button-group {
-            display: flex;
-            gap: 10px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #333;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-        input:focus {
-            outline: none;
-            border-color: #4CAF50;
-            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-        }
-        .flatpickr-input {
-            background-color: white !important;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-            grid-column: 1 / -1;
-            max-width: 200px;
-            margin: 0 auto;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        .results {
-            margin-top: 20px;
-        }
-        .stats {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-            display: flex;
-            justify-content: space-around;
-            font-size: 16px;
-        }
-        .stats p {
-            margin: 0;
-            padding: 8px 15px;
-            background-color: white;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .stats p span {
-            color: #666;
-            font-size: 14px;
-        }
-        .word-list {
-            max-height: 600px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
-            background-color: white;
-        }
-        .word-item {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            line-height: 1.5;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .word-item:last-child {
-            border-bottom: none;
-        }
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-            font-size: 16px;
-        }
-        .error {
-            color: #dc3545;
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #f8d7da;
-            border-radius: 4px;
-            text-align: center;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-        }
-        .flatpickr-calendar {
-            position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            z-index: 1000;
-        }
-        .flatpickr-time {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 5px;
-        }
-        .flatpickr-time input {
-            width: 40px;
-            padding: 5px;
-            text-align: center;
-        }
-        .flatpickr-time .flatpickr-time-separator {
-            margin: 0 5px;
-        }
-        .flatpickr-time .flatpickr-am-pm {
-            margin-left: 5px;
-        }
-        .word-count {
-            background-color: #4CAF50;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 14px;
-            min-width: 40px;
-            text-align: center;
-        }
-    </style>
+    <title>搜索系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <div id="app" class="container">
-        <h1>ES 歧义词查询</h1>
-        
-        <div class="search-form">
-            <div class="form-group">
-                <label for="keyword">关键词：</label>
-                <input type="text" id="keyword" v-model="keyword" placeholder="请输入搜索关键词">
-            </div>
-            
-            <div class="form-group">
-                <label for="startTime">开始时间：</label>
-                <input type="text" id="startTime" ref="startTimePicker" placeholder="选择开始时间">
-            </div>
-            
-            <div class="form-group">
-                <label for="endTime">结束时间：</label>
-                <input type="text" id="endTime" ref="endTimePicker" placeholder="选择结束时间">
-            </div>
-
-            <div class="form-group small">
-                <label for="contextLength">上下文长度：</label>
-                <input type="number" id="contextLength" v-model="contextLength" placeholder="请输入上下文长度" min="1" value="1">
-            </div>
-
-            <div class="form-group small">
-                <label for="maxResults">最大结果数：</label>
-                <input type="number" id="maxResults" v-model="maxResults" placeholder="请输入最大结果数" min="1" value="10000">
-            </div>
-            
-            <div class="button-group">
-                <button @click="search" :disabled="loading">搜索</button>
-                <button @click="clearForm" :disabled="loading">清空</button>
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="/">搜索系统</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">搜索</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/author_stats.html">作者统计</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/media_stats.html">媒体统计</a>
+                    </li>
+                </ul>
             </div>
         </div>
+    </nav>
 
-        <div v-if="error" class="error">
-            {{ error }}
-        </div>
-
-        <div v-if="loading" class="loading">
-            搜索中...
-        </div>
-
-        <div v-if="results" class="results">
-            <div class="stats">
-                <p>总匹配数：{{ results.total }} <span>条</span></p>
-                <p>已解析数：{{ results.parsed }} <span>条</span></p>
-                <p>最大结果：{{ results.max_results }} <span>条</span></p>
-            </div>
-
-            <div class="word-list">
-                <div v-for="(item, index) in results.words" :key="index" class="word-item">
-                    <span class="word-text">{{ item.word }}</span>
-                    <span class="word-count">{{ item.count }}</span>
+    <div class="container">
+        <div class="form-container">
+            <form id="searchForm">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="keyword" class="form-label">关键词</label>
+                            <input type="text" class="form-control" id="keyword" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="startTime" class="form-label">开始时间</label>
+                            <input type="text" class="form-control" id="startTime" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="endTime" class="form-label">结束时间</label>
+                            <input type="text" class="form-control" id="endTime" required>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="contextChars" class="form-label">上下文长度</label>
+                            <input type="number" class="form-control" id="contextChars" value="1">
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="form-group">
+                            <label for="maxResults" class="form-label">结果数</label>
+                            <input type="number" class="form-control" id="maxResults" value="100">
+                        </div>
+                    </div>
                 </div>
-            </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">搜索</button>
+                    </div>
+                </div>
+            </form>
         </div>
+
+        <div id="results"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>
     <script>
-        const { createApp } = Vue
+        // 设置默认时间为昨天
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
+        
+        const yesterdayEnd = new Date(yesterday);
+        yesterdayEnd.setHours(23, 59, 59, 999);
 
-        createApp({
-            data() {
-                return {
-                    keyword: '',
-                    startTime: '',
-                    endTime: '',
-                    contextLength: '1',
-                    maxResults: '10000',
-                    results: null,
-                    loading: false,
-                    error: null,
-                    startTimePicker: null,
-                    endTimePicker: null
-                }
-            },
-            mounted() {
-                // 初始化日期时间选择器
-                const commonConfig = {
-                    enableTime: true,
-                    dateFormat: "Y-m-d H:i:S",
-                    time_24hr: true,
-                    locale: "zh",
-                    minuteIncrement: 1,
-                    allowInput: true,
-                    position: "auto center",
-                    static: true,
-                    onClose: (selectedDates, dateStr) => {
-                        if (selectedDates[0]) {
-                            const date = selectedDates[0];
-                            const hours = String(date.getHours()).padStart(2, '0');
-                            const minutes = String(date.getMinutes()).padStart(2, '0');
-                            const seconds = String(date.getSeconds()).padStart(2, '0');
-                            return `${dateStr} ${hours}:${minutes}:${seconds}`;
-                        }
-                        return '';
-                    }
-                };
+        // 初始化时间选择器
+        flatpickr("#startTime", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i:S",
+            locale: "zh",
+            defaultDate: yesterday,
+            time_24hr: true
+        });
 
-                this.startTimePicker = flatpickr(this.$refs.startTimePicker, {
-                    ...commonConfig,
-                    defaultHour: 0,
-                    defaultMinute: 0,
-                    defaultSeconds: 0,
-                    onChange: (selectedDates, dateStr) => {
-                        if (selectedDates[0]) {
-                            const date = selectedDates[0];
-                            this.startTime = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
-                        } else {
-                            this.startTime = '';
-                        }
+        flatpickr("#endTime", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i:S",
+            locale: "zh",
+            defaultDate: yesterdayEnd,
+            time_24hr: true
+        });
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                keyword: document.getElementById('keyword').value,
+                start_time: document.getElementById('startTime').value,
+                end_time: document.getElementById('endTime').value,
+                context_chars: parseInt(document.getElementById('contextChars').value),
+                max_results: parseInt(document.getElementById('maxResults').value)
+            };
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
                     },
-                    onClose: (selectedDates, dateStr) => {
-                        if (selectedDates[0]) {
-                            const date = selectedDates[0];
-                            this.startTime = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
-                        } else if (dateStr && this.validateTimeFormat(dateStr)) {
-                            this.startTime = dateStr;
-                        } else {
-                            this.startTime = '';
-                        }
-                    }
+                    body: JSON.stringify(formData)
                 });
 
-                this.endTimePicker = flatpickr(this.$refs.endTimePicker, {
-                    ...commonConfig,
-                    defaultHour: 23,
-                    defaultMinute: 59,
-                    defaultSeconds: 59,
-                    onChange: (selectedDates, dateStr) => {
-                        if (selectedDates[0]) {
-                            const date = selectedDates[0];
-                            this.endTime = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
-                        } else {
-                            this.endTime = '';
-                        }
-                    },
-                    onClose: (selectedDates, dateStr) => {
-                        if (selectedDates[0]) {
-                            const date = selectedDates[0];
-                            this.endTime = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
-                        } else if (dateStr && this.validateTimeFormat(dateStr)) {
-                            this.endTime = dateStr;
-                        } else {
-                            this.endTime = '';
-                        }
-                    }
-                });
-            },
-            methods: {
-                validateTimeFormat(timeStr) {
-                    const regex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
-                    if (!regex.test(timeStr)) {
-                        return false;
-                    }
-                    const [datePart, timePart] = timeStr.split(' ');
-                    const [year, month, day] = datePart.split('-').map(Number);
-                    const [hours, minutes, seconds] = timePart.split(':').map(Number);
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    const resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = '';
                     
-                    const date = new Date(year, month - 1, day, hours, minutes, seconds);
-                    return date.getFullYear() === year &&
-                           date.getMonth() === month - 1 &&
-                           date.getDate() === day &&
-                           date.getHours() === hours &&
-                           date.getMinutes() === minutes &&
-                           date.getSeconds() === seconds;
-                },
-                clearForm() {
-                    this.keyword = '';
-                    this.startTime = '';
-                    this.endTime = '';
-                    this.contextLength = '1';
-                    this.maxResults = '10000';
-                    this.results = null;
-                    this.error = null;
-                    this.startTimePicker.clear();
-                    this.endTimePicker.clear();
-                },
-                async search() {
-                    if (!this.keyword) {
-                        this.error = '请输入关键词';
-                        return;
+                    if (result.data && result.data.words && result.data.words.length > 0) {
+                        const table = document.createElement('table');
+                        table.className = 'table table-striped table-hover';
+                        table.innerHTML = `
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px">序号</th>
+                                    <th>词语</th>
+                                    <th style="width: 100px">出现次数</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${result.data.words.map((item, index) => `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${item.word}</td>
+                                        <td>${item.count}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        `;
+                        resultsDiv.appendChild(table);
+                    } else {
+                        resultsDiv.innerHTML = '<div class="alert alert-info">没有找到匹配的结果</div>';
                     }
-
-                    if (!this.startTime || !this.endTime) {
-                        this.error = '请选择时间范围';
-                        return;
-                    }
-
-                    this.loading = true;
-                    this.error = null;
-                    this.results = null;
-
-                    try {
-                        const response = await axios.post('/api/search', {
-                            keyword: this.keyword,
-                            start_time: this.startTime,
-                            end_time: this.endTime,
-                            context_chars: this.contextLength ? parseInt(this.contextLength) : undefined,
-                            max_results: this.maxResults ? parseInt(this.maxResults) : undefined
-                        });
-                        
-                        if (response.data.code === 200) {
-                            this.results = response.data.data;
-                        } else {
-                            this.error = response.data.message || '搜索失败';
-                        }
-                    } catch (error) {
-                        this.error = error.response?.data?.detail || '搜索失败，请重试';
-                    } finally {
-                        this.loading = false;
-                    }
+                } else {
+                    alert('搜索失败：' + result.message);
                 }
+            } catch (error) {
+                alert('搜索出错：' + error.message);
             }
-        }).mount('#app')
+        });
     </script>
 </body>
 </html> 

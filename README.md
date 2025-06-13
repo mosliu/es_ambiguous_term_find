@@ -1,148 +1,160 @@
-# ES 歧义词查询服务
+# ES 模糊词查询服务
 
-这是一个用于从 Elasticsearch 中查询特定词语并分析其上下文的服务。
+这是一个基于 FastAPI 和 Elasticsearch 的模糊词查询服务，用于从 ES 中查询特定词语并分析其上下文。
 
 ## 功能特点
 
-- 支持多字段搜索
-- 支持时间范围过滤
-- 自动提取关键词上下文
-- 结果去重和统计
-- 支持大量数据的分页查询
-- 支持作者发文数量统计和可视化
+1. 关键词搜索
+   - 支持模糊匹配
+   - 支持时间范围筛选
+   - 支持上下文长度设置
+   - 支持最大结果数限制
 
-## API 接口
+2. 作者统计
+   - 统计指定时间范围内的作者发文数量
+   - 支持显示数量设置
+   - 按发文数量降序排序
 
-### 搜索接口
+3. 媒体统计
+   - 统计指定时间范围内的媒体发文数量
+   - 支持显示数量设置
+   - 按发文数量降序排序
 
-```
-POST /api/search
-```
+## 技术栈
 
-请求参数：
-```json
-{
-    "keyword": "搜索关键词",
-    "start_time": "2024-01-01 00:00:00",
-    "end_time": "2024-01-02 00:00:00",
-    "context_chars": 50,  // 可选参数，指定关键词前后提取的字符数
-    "max_results": 10000  // 可选参数，指定最大返回结果数
-}
-```
+- FastAPI
+- Elasticsearch
+- Vue.js
+- Bootstrap
+- Flatpickr (日期时间选择器)
 
-响应格式：
-```json
-{
-    "code": 200,
-    "message": "success",
-    "data": {
-        "total": 13771,        // 总匹配数
-        "parsed": 12756,       // 已解析数
-        "max_results": 10000,  // ES返回的实际结果数
-        "words": [             // 去重后的词条列表，按出现次数降序排序
-            {
-                "word": "匹配内容",
-                "count": 出现次数
-            }
-        ]
-    }
-}
+## 安装和配置
+
+1. 克隆项目
+```bash
+git clone [项目地址]
+cd es_ambiguous_term_find
 ```
 
-### 作者统计接口
-
-```
-POST /api/author-stats
-```
-
-请求参数：
-```json
-{
-    "start_time": "2024-01-01 00:00:00",
-    "end_time": "2024-01-02 00:00:00",
-    "top_n": 10  // 可选参数，指定显示的作者数量，默认为10
-}
+2. 创建虚拟环境
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate     # Windows
 ```
 
-响应格式：
-```json
-{
-    "code": 200,
-    "message": "success",
-    "data": {
-        "total_authors": 100,  // 总作者数
-        "time_range": {
-            "start": "2024-01-01 00:00:00",
-            "end": "2024-01-02 00:00:00"
-        },
-        "top_authors": [       // 发文数量最多的作者列表
-            {
-                "author": "作者名称",
-                "count": 发文数量
-            }
-        ]
-    }
-}
-```
-
-## 配置说明
-
-在 `.env` 文件中配置以下参数：
-
-```env
-# API 配置
-API_HOST=0.0.0.0
-API_PORT=8000
-
-# Elasticsearch 配置
-ES_HOST=localhost
-ES_PORT=9200
-ES_USERNAME=elastic
-ES_PASSWORD=your_password
-
-# 搜索配置
-MAX_RESULTS=10000        // 默认最大返回结果数
-CONTEXT_CHARS=50        // 默认关键词前后提取的字符数
-```
-
-## 安装和运行
-
-1. 安装依赖：
+3. 安装依赖
 ```bash
 pip install -r requirements.txt
 ```
 
-2. 配置环境变量：
+4. 配置环境变量
 ```bash
 cp .env_example .env
-# 编辑 .env 文件，填入实际配置
+# 编辑 .env 文件，设置必要的环境变量
 ```
 
-3. 运行服务：
+## 运行服务
+
 ```bash
 python main.py
 ```
 
-## 使用说明
+服务将在 http://localhost:8000 启动
 
-1. 访问 http://localhost:8000 打开查询界面
-2. 输入搜索关键词
-3. 选择时间范围
-4. 点击搜索按钮
-5. 查看结果统计和匹配内容
+## API 接口
 
-### 作者统计功能
+### 1. 搜索接口
+- 路径：`/api/search`
+- 方法：POST
+- 参数：
+  - keyword: 搜索关键词
+  - start_time: 开始时间
+  - end_time: 结束时间
+  - context_chars: 上下文长度（可选）
+  - max_results: 最大结果数（可选）
 
-1. 访问 http://localhost:8000/author_stats.html 打开作者统计界面
-2. 选择时间范围
-3. 设置要显示的作者数量（可选）
-4. 点击查询按钮
-5. 查看作者发文数量统计图表
+### 2. 作者统计接口
+- 路径：`/api/author-stats`
+- 方法：POST
+- 参数：
+  - start_time: 开始时间
+  - end_time: 结束时间
+  - top_n: 显示数量（可选，默认100）
+
+### 3. 媒体统计接口
+- 路径：`/api/media-stats`
+- 方法：POST
+- 参数：
+  - start_time: 开始时间
+  - end_time: 结束时间
+  - top_n: 显示数量（可选，默认100）
+
+## 页面说明
+
+1. 搜索页面 (`/`)
+   - 关键词搜索
+   - 时间范围选择
+   - 上下文长度设置
+   - 最大结果数设置
+
+2. 作者统计页面 (`/author_stats.html`)
+   - 时间范围选择
+   - 显示数量设置
+   - 作者排名列表
+
+3. 媒体统计页面 (`/media_stats.html`)
+   - 时间范围选择
+   - 显示数量设置
+   - 媒体排名列表
 
 ## 注意事项
 
-- 时间格式必须是 `YYYY-MM-DD HH:MM:SS`
-- 最大返回结果数可以通过请求参数 `max_results` 自定义，默认使用 `MAX_RESULTS` 配置值
-- 关键词上下文长度可以通过请求参数 `context_chars` 自定义，默认使用 `CONTEXT_CHARS` 配置值
-- 上下文长度和最大结果数的最小值均为1
-- 作者统计功能支持自定义显示数量，最小值为1
+1. 时间格式
+   - 所有时间格式必须为：`YYYY-MM-DD HH:MM:SS`
+   - 支持手动输入和日期选择器
+
+2. 索引命名规则
+   - 索引格式：`qbYYYYMM1`
+   - 例如：`qb2024031` 表示 2024年3月 的索引
+
+3. 查询限制
+   - 默认最大结果数：10000
+   - 默认显示数量：100
+   - 支持自定义设置
+
+## 开发说明
+
+1. 目录结构
+```
+.
+├── api/            # API 路由
+├── core/           # 核心服务
+├── config/         # 配置文件
+├── static/         # 静态文件
+├── utils/          # 工具函数
+├── logs/           # 日志文件
+├── main.py         # 主程序
+└── requirements.txt # 依赖列表
+```
+
+2. 日志
+- 日志文件位于 `logs` 目录
+- 按日期和模块分类记录
+
+3. 错误处理
+- 统一的错误处理机制
+- 详细的错误日志记录
+- 友好的错误提示
+
+## 贡献指南
+
+1. Fork 项目
+2. 创建特性分支
+3. 提交更改
+4. 推送到分支
+5. 创建 Pull Request
+
+## 许可证
+
+[许可证类型]

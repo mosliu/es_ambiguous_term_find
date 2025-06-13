@@ -267,6 +267,80 @@ class ESClient:
             logger.error(f"作者聚合查询失败: {str(e)}")
             raise
 
+    def get_media_aggregation(self, start_time: str, end_time: str, top_n: int) -> Dict[str, Any]:
+        """获取媒体聚合统计"""
+        try:
+            # 验证并格式化时间
+            start_time = self._validate_time_format(start_time)
+            end_time = self._validate_time_format(end_time)
+
+            # 获取时间范围内的所有索引
+            start_index = self.get_index_for_date(start_time)
+            end_index = self.get_index_for_date(end_time)
+
+            # 获取所有需要查询的索引
+            indices = []
+            current_index = start_index
+            while current_index <= end_index:
+                indices.append(current_index)
+                current_index = self._get_next_index(current_index)
+
+            query = {
+                "bool": {
+                    "must": [
+                        {
+                            "range": {
+                                "add_time": {
+                                    "gte": start_time,
+                                    "lte": end_time
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+
+            aggs = {
+                "media_stats": {
+                    "terms": {
+                        "field": "media_name.keyword",  # 使用 media_name 字段
+                        "size": top_n,
+                        "order": {
+                            "_count": "desc"
+                        }
+                    }
+                }
+            }
+
+            # 使用所有索引进行查询
+            indices_str = ",".join(indices)
+            logger.info(f"媒体统计查询 - 使用索引: {indices_str}")
+            
+            response = self._make_request("POST", f"{indices_str}/_search", {
+                "query": query,
+                "aggs": aggs,
+                "size": 0
+            })
+
+            # 处理聚合结果
+            buckets = response["aggregations"]["media_stats"]["buckets"]
+            total_media = response["aggregations"]["media_stats"]["sum_other_doc_count"] + len(buckets)
+
+            return {
+                "total_media": total_media,
+                "top_media": [
+                    {
+                        "media": bucket["key"],
+                        "count": bucket["doc_count"]
+                    }
+                    for bucket in buckets
+                ]
+            }
+
+        except Exception as e:
+            logger.error(f"媒体聚合查询失败: {str(e)}")
+            raise
+
     def _get_next_index(self, current_index: str) -> str:
         """获取下一个索引名"""
         # 从索引名中提取年份和月份
